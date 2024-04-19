@@ -1,24 +1,24 @@
 <!-- src/routes/index.svelte -->
 <script>
-  import { onMount } from 'svelte';
-
-  let apiKey = '';
-  let prompt = 'dog wearing black glasses';
-  let generatedImages = [];
-  let selectedImage = '';
-  let isGenerating = false;
-  let errorMessage = '';
-
-  onMount(() => {
-    apiKey = localStorage.getItem('APIKey') || '';
-  });
-
-  function saveApiKey() {
-    localStorage.setItem('APIKey', apiKey);
-  }
-
-  async function generateImage() {
-    isGenerating = true;
+	import { onMount } from 'svelte';
+  
+	let apiKey = '';
+	let prompt = 'dog wearing black glasses';
+	let generatedImages = [];
+	let selectedImage = null;
+	let isGenerating = false;
+	let errorMessage = null;
+  
+	onMount(() => {
+	  apiKey = localStorage.getItem('APIKey') || '';
+	});
+  
+	function saveApiKey() {
+	  localStorage.setItem('APIKey', apiKey);
+	}
+  
+	async function generateImage() {
+	  isGenerating = true;
     errorMessage = null;
 
     const url = 'https://api.stability.ai/v2beta/stable-image/generate/sd3';
@@ -50,16 +50,23 @@
     } finally {
       isGenerating = false;
     }
-  }
-
-  function selectImage(imageUrl) {
-    selectedImage = imageUrl;
-  }
-</script>
-
-<div class="app">
-  <div class="sidebar">
-    <div class="form-group">
+	}
+  
+	function selectImage(imageUrl) {
+	  selectedImage = imageUrl;
+	}
+  
+	function downloadImage(imageUrl, imageName) {
+	  const link = document.createElement('a');
+	  link.href = imageUrl;
+	  link.download = imageName;
+	  link.click();
+	}
+  </script>
+  
+  <div class="app">
+	<div class="sidebar">
+	  <div class="form-group">
       <label for="api-key">API Key:</label>
       <input type="text" id="api-key" bind:value={apiKey} on:input={saveApiKey} />
     </div>
@@ -75,24 +82,30 @@
     {/if}
     <div class="image-list">
       {#each generatedImages as image}
-        <div class="image-item" on:click={() => selectImage(image.url)}>
-          <img src={image.thumbnail} alt={image.name} />
-          <span>{image.name}</span>
+        <div class="image-item">
+          <div class="image-wrapper" on:click={() => selectImage(image.url)}>
+            <img src={image.thumbnail} alt={image.name} />
+            <div class="download-button" on:click|stopPropagation={() => downloadImage(image.url, image.name)}>
+              <img src="/download-icon.svg" alt="Download" />
+            </div>
+          </div>
         </div>
       {/each}
     </div>
   </div>
   <div class="main-content">
-    {#if selectedImage}
+	</div>
+	<div class="main-content">
+	  {#if selectedImage}
       <img src={selectedImage} alt="Generated Image" class="generated-image" />
     {:else}
       <div class="no-image-selected">No image selected</div>
     {/if}
   </div>
-</div>
-
-<style>
-  .app {
+  </div>
+  
+  <style>
+	.app {
     display: flex;
   }
 
@@ -125,10 +138,10 @@
     color: #fff;
     border: none;
     border-radius: 4px;
-    cursor: pointer;
-  }
-
-  button:disabled {
+	  cursor: pointer;
+	}
+  
+	button:disabled {
     background-color: #ccc;
     cursor: not-allowed;
   }
@@ -158,12 +171,13 @@
   .main-content {
     flex: 1;
     padding: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .generated-image {
+	  display: flex;
+	  justify-content: center;
+	  align-items: center;
+	  cursor: pointer;
+	}
+  
+	.generated-image {
     max-width: 100%;
     max-height: 100%;
   }
@@ -171,5 +185,50 @@
   .no-image-selected {
     font-size: 18px;
     color: #888;
+	}
+
+  .image-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    grid-gap: 10px;
+    margin-top: 20px;
   }
-</style>
+
+  .image-item {
+    position: relative;
+    cursor: pointer;
+  }
+
+  .image-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+
+  .image-wrapper img {
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+  }
+
+  .download-button {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.0);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .download-button img {
+    left: 16px;
+    width: 16px;
+    height: 16px;
+    justify-content: center;
+	  align-items: center;
+  }
+  </style>
